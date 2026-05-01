@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash/splash_screen.dart';
 import 'services/auth_service.dart';
 import 'services/db_service.dart';
 
 void main() async {
-  // Setup Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  // IMPORTANT: The user must run `flutterfire configure` to generate firebase_options.dart.
-  // Until then, Firebase.initializeApp() will look for native platform configs.
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
-    debugPrint("Firebase not configured: \$e");
+    debugPrint('Firebase not configured: $e');
   }
 
   runApp(
@@ -29,7 +29,7 @@ void main() async {
 }
 
 class RealEstateApp extends StatelessWidget {
-  const RealEstateApp({Key? key}) : super(key: key);
+  const RealEstateApp({super.key});
 
   @override
   Widget build(BuildContext context) {

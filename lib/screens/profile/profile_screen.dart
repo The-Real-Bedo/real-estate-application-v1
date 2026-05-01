@@ -8,7 +8,7 @@ import '../auth/login_screen.dart';
 import '../owner/my_properties_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   void _logout(BuildContext context) async {
     await Provider.of<AuthService>(context, listen: false).logout();
@@ -32,7 +32,10 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -61,42 +64,69 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   userData['fullName'] ?? 'No Name',
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayLarge?.copyWith(fontSize: 24),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   userData['email'] ?? '',
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
+                    color: AppTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     (userData['role'] ?? 'User').toUpperCase(),
-                    style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 48),
-                if (authService.userRole == 'owner') 
+                if (authService.userRole == 'owner')
                   ListTile(
-                    leading: const Icon(Icons.home_work, color: AppTheme.primary),
-                    title: const Text('My Properties', style: TextStyle(fontWeight: FontWeight.bold)),
+                    leading: const Icon(
+                      Icons.home_work,
+                      color: AppTheme.primary,
+                    ),
+                    title: const Text(
+                      'My Properties',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MyPropertiesScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyPropertiesScreen(),
+                        ),
+                      );
                     },
                   ),
                 const SizedBox(height: 8),
                 ListTile(
                   leading: const Icon(Icons.logout, color: AppTheme.error),
-                  title: const Text('Logout', style: TextStyle(color: AppTheme.error)),
+                  title: const Text(
+                    'Logout',
+                    style: TextStyle(color: AppTheme.error),
+                  ),
                   onTap: () => _logout(context),
-                  tileColor: AppTheme.error.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  tileColor: AppTheme.error.withValues(alpha: 0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ],
             ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -8,12 +10,13 @@ class AuthService extends ChangeNotifier {
 
   User? _user;
   String? _userRole;
+  late final StreamSubscription<User?> _authSubscription;
 
   User? get user => _user;
   String? get userRole => _userRole;
 
   AuthService() {
-    _auth.authStateChanges().listen((User? user) {
+    _authSubscription = _auth.authStateChanges().listen((User? user) {
       _user = user;
       if (user != null) {
         _fetchUserRole(user.uid);
@@ -24,15 +27,23 @@ class AuthService extends ChangeNotifier {
     });
   }
 
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
+  }
+
   Future<void> _fetchUserRole(String uid) async {
     try {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
       if (doc.exists) {
         _userRole = doc.get('role');
+      } else {
+        _userRole = null;
       }
       notifyListeners();
     } catch (e) {
-      debugPrint("Error fetching role: \$e");
+      debugPrint('Error fetching role: $e');
     }
   }
 
@@ -41,18 +52,23 @@ class AuthService extends ChangeNotifier {
     required String password,
     required String fullName,
     required String role,
+    String phone = '',
   }) async {
     try {
-      UserCredential cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      UserCredential cred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       // Admin Override
       if (email == 'abdo.bakr.23.11@gmail.com') {
         role = 'admin';
       }
-      
+
       await _db.collection('users').doc(cred.user!.uid).set({
         'uid': cred.user!.uid,
         'email': email,
         'fullName': fullName,
+        'phone': phone,
         'role': role,
         'favorites': [],
       });

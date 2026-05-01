@@ -9,7 +9,7 @@ import '../owner/add_property_screen.dart';
 import '../property/property_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,7 +19,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
 
-  final List<String> _categories = ['All', 'Apartments', 'Villas', 'Chalets', 'Offices'];
+  final List<String> _categories = [
+    'All',
+    'Apartments',
+    'Villas',
+    'Chalets',
+    'Offices',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Welcome,', style: Theme.of(context).textTheme.bodyMedium),
             Text(
               authService.user?.email ?? 'User',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 16),
+              style: Theme.of(
+                context,
+              ).textTheme.displayMedium?.copyWith(fontSize: 16),
             ),
           ],
         ),
@@ -66,7 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           hintText: 'Search properties...',
                           prefixIcon: Icon(Icons.search),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -75,13 +86,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     width: 50,
                     height: 50,
-                    decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(12)),
-                    child: IconButton(icon: const Icon(Icons.filter_list, color: Colors.white), onPressed: () {}),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.filter_list, color: Colors.white),
+                      onPressed: () {},
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Categories
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -102,10 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              Text('Available Properties', style: Theme.of(context).textTheme.displayMedium),
+
+              Text(
+                'Available Properties',
+                style: Theme.of(context).textTheme.displayMedium,
+              ),
               const SizedBox(height: 16),
-              
+
               StreamBuilder<QuerySnapshot>(
                 stream: dbService.getApprovedProperties(),
                 builder: (context, snapshot) {
@@ -119,33 +139,45 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Client-side filtering logic
                   var filteredDocs = snapshot.data!.docs.where((doc) {
                     var property = doc.data() as Map<String, dynamic>;
-                    String title = (property['title'] ?? '').toString().toLowerCase();
-                    String location = (property['location'] ?? '').toString().toLowerCase();
-                    String categoryField = (property['category'] ?? property['type'] ?? '').toString().toLowerCase();
+                    String title = (property['title'] ?? '')
+                        .toString()
+                        .toLowerCase();
+                    String location = (property['location'] ?? '')
+                        .toString()
+                        .toLowerCase();
+                    String categoryField =
+                        (property['category'] ?? property['type'] ?? '')
+                            .toString()
+                            .toLowerCase();
 
                     // Search Query Matching
-                    bool matchesSearch = _searchQuery.isEmpty || 
-                                         title.contains(_searchQuery) || 
-                                         location.contains(_searchQuery);
+                    bool matchesSearch =
+                        _searchQuery.isEmpty ||
+                        title.contains(_searchQuery) ||
+                        location.contains(_searchQuery);
 
                     // Category Matching
                     bool matchesCategory = true;
                     if (_selectedCategory != 'All') {
-                       // We check if the explicit category matches (if saved), OR if title mentions it to support legacy posts where 'category' was not specifically saved
-                       String target = _selectedCategory.toLowerCase();
-                       // remove trailing 's' if any to match "apartment" -> "apartments"
-                       if (target.endsWith('s')) target = target.substring(0, target.length - 1);
-                       
-                       bool exactCategoryMatch = categoryField.contains(target);
-                       bool titleMatch = title.contains(target);
-                       matchesCategory = exactCategoryMatch || titleMatch;
+                      // We check if the explicit category matches (if saved), OR if title mentions it to support legacy posts where 'category' was not specifically saved
+                      String target = _selectedCategory.toLowerCase();
+                      // remove trailing 's' if any to match "apartment" -> "apartments"
+                      if (target.endsWith('s')) {
+                        target = target.substring(0, target.length - 1);
+                      }
+
+                      bool exactCategoryMatch = categoryField.contains(target);
+                      bool titleMatch = title.contains(target);
+                      matchesCategory = exactCategoryMatch || titleMatch;
                     }
 
                     return matchesSearch && matchesCategory;
                   }).toList();
 
                   if (filteredDocs.isEmpty) {
-                    return const Center(child: Text("No properties match your search."));
+                    return const Center(
+                      child: Text("No properties match your search."),
+                    );
                   }
 
                   return SizedBox(
@@ -155,11 +187,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
                         var propertyDoc = filteredDocs[index];
-                        var property = propertyDoc.data() as Map<String, dynamic>;
-                        String imageUrl = (property['images'] != null && property['images'].isNotEmpty) 
-                                          ? property['images'][0] 
-                                          : '';
-                                          
+                        var property =
+                            propertyDoc.data() as Map<String, dynamic>;
+                        String imageUrl =
+                            (property['images'] != null &&
+                                property['images'].isNotEmpty)
+                            ? property['images'][0]
+                            : '';
+
                         return PropertyCard(
                           title: property['title'],
                           location: property['location'],
@@ -168,7 +203,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => PropertyDetailsScreen(property: propertyDoc)),
+                              MaterialPageRoute(
+                                builder: (_) => PropertyDetailsScreen(
+                                  property: propertyDoc,
+                                ),
+                              ),
                             );
                           },
                         );
@@ -181,14 +220,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: authService.userRole == 'owner' || authService.userRole == 'admin' 
+      floatingActionButton:
+          authService.userRole == 'owner' || authService.userRole == 'admin'
           ? FloatingActionButton(
               backgroundColor: AppTheme.primary,
               child: const Icon(Icons.add, color: Colors.white),
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPropertyScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddPropertyScreen()),
+                );
               },
-            ) 
+            )
           : null,
     );
   }
@@ -207,7 +250,9 @@ class _CategoryPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: isSelected ? AppTheme.primary : AppTheme.background,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isSelected ? AppTheme.primary : AppTheme.border),
+        border: Border.all(
+          color: isSelected ? AppTheme.primary : AppTheme.border,
+        ),
       ),
       child: Text(
         title,

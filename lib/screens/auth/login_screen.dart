@@ -2,52 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../shared/custom_buttons.dart';
-import '../main_layout.dart';
+import '../../theme/app_theme.dart';
 import '../admin/admin_dashboard.dart';
+import '../main_layout.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _hidePassword = true;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _submitLogin() async {
-    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) return;
-    
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() => _isLoading = true);
     final authService = Provider.of<AuthService>(context, listen: false);
-    String? error = await authService.login(_emailCtrl.text.trim(), _passCtrl.text.trim());
+    final error = await authService.login(
+      _emailCtrl.text.trim(),
+      _passCtrl.text.trim(),
+    );
+
+    if (!mounted) {
+      return;
+    }
     setState(() => _isLoading = false);
 
     if (error == null) {
-      if (mounted) {
-        // Wait a small bit for the user object stream to update role
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        final role = authService.userRole;
-        if (role == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const MainLayout()),
-          );
-        }
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) {
+        return;
       }
+
+      final role = authService.userRole;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              role == 'admin' ? const AdminDashboard() : const MainLayout(),
+        ),
+      );
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
-      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
@@ -55,61 +70,139 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              Text(
-                'Log in',
-                style: Theme.of(context).textTheme.displayLarge,
-              ),
-              const SizedBox(height: 48),
-              TextFormField(
-                controller: _emailCtrl,
-                decoration: const InputDecoration(hintText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passCtrl,
-                obscureText: true,
-                decoration: const InputDecoration(hintText: 'Password', prefixIcon: Icon(Icons.lock_outline)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('No account? '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Signup now!',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 44),
+                const _AuthBadge(icon: Icons.lock_open_rounded),
+                const SizedBox(height: 24),
+                Text(
+                  'Welcome back',
+                  style: Theme.of(context).textTheme.displayLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Login to continue browsing properties.',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 36),
+                TextFormField(
+                  controller: _emailCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'name@example.com',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  validator: _validateEmail,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passCtrl,
+                  obscureText: _hidePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _hidePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                       ),
+                      onPressed: () {
+                        setState(() => _hidePassword = !_hidePassword);
+                      },
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              PrimaryButton(
-                isLoading: _isLoading,
-                text: 'Login',
-                onPressed: _submitLogin,
-              ),
-              const Spacer(),
-            ],
+                  textInputAction: TextInputAction.done,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your password.';
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) => _submitLogin(),
+                ),
+                const SizedBox(height: 24),
+                PrimaryButton(
+                  isLoading: _isLoading,
+                  text: 'Login',
+                  icon: Icons.login_rounded,
+                  onPressed: _submitLogin,
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('No account? '),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RoleSelectionScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Signup now',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+String? _validateEmail(String? value) {
+  final email = value?.trim() ?? '';
+  if (email.isEmpty) {
+    return 'Please enter your email.';
+  }
+  if (!email.contains('@') || !email.contains('.')) {
+    return 'Please enter a valid email.';
+  }
+  return null;
+}
+
+class _AuthBadge extends StatelessWidget {
+  final IconData icon;
+  const _AuthBadge({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 82,
+        height: 82,
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.22),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: Colors.white, size: 40),
       ),
     );
   }

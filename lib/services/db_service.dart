@@ -9,21 +9,24 @@ class DatabaseService {
 
   // Stream of Approved Properties for Home Screen
   Stream<QuerySnapshot> getApprovedProperties() {
-    return _db.collection('properties')
+    return _db
+        .collection('properties')
         .where('status', isEqualTo: 'approved')
         .snapshots();
   }
 
   // Stream of Pending Properties for Admin Dashboard
   Stream<QuerySnapshot> getPendingProperties() {
-    return _db.collection('properties')
+    return _db
+        .collection('properties')
         .where('status', isEqualTo: 'pending')
         .snapshots();
   }
 
   // Stream of Properties by a specific Owner
   Stream<QuerySnapshot> getPropertiesByOwner(String ownerId) {
-    return _db.collection('properties')
+    return _db
+        .collection('properties')
         .where('ownerId', isEqualTo: ownerId)
         .snapshots();
   }
@@ -51,13 +54,13 @@ class DatabaseService {
         'beds': beds,
         'baths': baths,
         'area': area,
-        'status': 'pending', 
+        'status': 'pending',
         'images': images,
         'createdAt': FieldValue.serverTimestamp(),
       });
       return true;
     } catch (e) {
-      debugPrint("Error adding property: \$e");
+      debugPrint('Error adding property: $e');
       return false;
     }
   }
@@ -69,18 +72,18 @@ class DatabaseService {
         'status': status,
       });
     } catch (e) {
-      debugPrint("Error updating property: \$e");
+      debugPrint('Error updating property: $e');
     }
   }
 
   // Admin or Owner action: Delete property completely
-  Future<void> deleteProperty(String propertyId, List<dynamic> images) async {
+  Future<void> deleteProperty(String propertyId) async {
     try {
       // Deleting from Cloudinary via frontend isn't allowed to prevent abuse.
       // So we only delete the document from Firestore.
       await _db.collection('properties').doc(propertyId).delete();
     } catch (e) {
-      debugPrint("Error deleting property: \$e");
+      debugPrint('Error deleting property: $e');
     }
   }
 
@@ -90,7 +93,9 @@ class DatabaseService {
       const String cloudName = 'dnay0mygm';
       const String uploadPreset = 'properties';
 
-      final url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final url = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+      );
       final request = http.MultipartRequest('POST', url)
         ..fields['upload_preset'] = uploadPreset
         ..files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -111,20 +116,24 @@ class DatabaseService {
   }
 
   // Toggle favorite property for user
-  Future<void> toggleFavorite(String uid, String propertyId, bool isFavorite) async {
+  Future<void> toggleFavorite(
+    String uid,
+    String propertyId,
+    bool isFavorite,
+  ) async {
     try {
       final docRef = _db.collection('users').doc(uid);
       if (isFavorite) {
         await docRef.update({
-          'favorites': FieldValue.arrayUnion([propertyId])
+          'favorites': FieldValue.arrayUnion([propertyId]),
         });
       } else {
         await docRef.update({
-          'favorites': FieldValue.arrayRemove([propertyId])
+          'favorites': FieldValue.arrayRemove([propertyId]),
         });
       }
     } catch (e) {
-      debugPrint("Error toggling favorite: \$e");
+      debugPrint('Error toggling favorite: $e');
     }
   }
 
@@ -140,7 +149,8 @@ class DatabaseService {
       return const Stream.empty();
     }
     // Note: 'in' query supports up to 10 items. For more, chunking is required.
-    return _db.collection('properties')
+    return _db
+        .collection('properties')
         .where(FieldPath.documentId, whereIn: favoriteIds.take(10).toList())
         .snapshots();
   }

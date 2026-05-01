@@ -7,12 +7,12 @@ class CustomTextInput extends StatelessWidget {
   final TextInputType keyboardType;
 
   const CustomTextInput({
-    Key? key,
+    super.key,
     required this.hintText,
     this.icon,
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

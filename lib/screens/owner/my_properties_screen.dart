@@ -8,26 +8,44 @@ import '../../shared/property_card.dart';
 import '../property/property_details_screen.dart';
 
 class MyPropertiesScreen extends StatelessWidget {
-  const MyPropertiesScreen({Key? key}) : super(key: key);
+  const MyPropertiesScreen({super.key});
 
-  void _confirmDelete(BuildContext context, String propertyId, List<dynamic> images) {
+  void _confirmDelete(BuildContext context, String propertyId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Property?'),
-        content: const Text('Are you sure you want to delete this property? This action cannot be undone and will delete all associated images.'),
+        content: const Text(
+          'Are you sure you want to delete this property? This action cannot be undone and will delete all associated images.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleting...')));
-              await Provider.of<DatabaseService>(context, listen: false).deleteProperty(propertyId, images);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Deleting...')));
+              await Provider.of<DatabaseService>(
+                context,
+                listen: false,
+              ).deleteProperty(propertyId);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted successfully'), backgroundColor: AppTheme.success));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Deleted successfully'),
+                    backgroundColor: AppTheme.success,
+                  ),
+                );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: AppTheme.error)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
@@ -45,7 +63,10 @@ class MyPropertiesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Properties', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'My Properties',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppTheme.textPrimary),
@@ -57,7 +78,9 @@ class MyPropertiesScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("You haven't added any properties yet."));
+            return const Center(
+              child: Text("You haven't added any properties yet."),
+            );
           }
 
           return ListView.builder(
@@ -66,10 +89,10 @@ class MyPropertiesScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               var propertyDoc = snapshot.data!.docs[index];
               var property = propertyDoc.data() as Map<String, dynamic>;
-              String imageUrl = (property['images'] != null && property['images'].isNotEmpty) 
-                                ? property['images'][0] 
-                                : '';
-              List<dynamic> allImages = property['images'] ?? [];
+              String imageUrl =
+                  (property['images'] != null && property['images'].isNotEmpty)
+                  ? property['images'][0]
+                  : '';
               String status = property['status'] ?? 'pending';
 
               return Padding(
@@ -86,7 +109,10 @@ class MyPropertiesScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => PropertyDetailsScreen(property: propertyDoc)),
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PropertyDetailsScreen(property: propertyDoc),
+                            ),
                           );
                         },
                       ),
@@ -97,24 +123,39 @@ class MyPropertiesScreen extends StatelessWidget {
                       child: IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: const Icon(Icons.delete, color: AppTheme.error),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.delete,
+                            color: AppTheme.error,
+                          ),
                         ),
-                        onPressed: () => _confirmDelete(context, propertyDoc.id, allImages),
+                        onPressed: () =>
+                            _confirmDelete(context, propertyDoc.id),
                       ),
                     ),
                     Positioned(
                       top: 12,
                       left: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: status == 'approved' ? AppTheme.success : AppTheme.warning,
+                          color: status == 'approved'
+                              ? AppTheme.success
+                              : AppTheme.warning,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           status.toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

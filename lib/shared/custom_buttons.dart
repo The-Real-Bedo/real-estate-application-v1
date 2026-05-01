@@ -5,13 +5,15 @@ class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool isLoading;
+  final IconData? icon;
 
   const PrimaryButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
-  }) : super(key: key);
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +21,17 @@ class PrimaryButton extends StatelessWidget {
       onPressed: isLoading ? null : onPressed,
       child: isLoading
           ? const CircularProgressIndicator(color: Colors.white)
-          : Text(text),
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 8),
+                ],
+                Flexible(child: Text(text, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
     );
   }
 }
@@ -30,11 +42,11 @@ class OutlineSelectionButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const OutlineSelectionButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.isSelected,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +56,9 @@ class OutlineSelectionButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.secondary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected
+              ? AppTheme.secondary.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.secondary : AppTheme.border,
@@ -71,21 +85,18 @@ class SocialButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const SocialButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.icon,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, color: AppTheme.textPrimary),
-      label: Text(
-        text,
-        style: const TextStyle(color: AppTheme.textPrimary),
-      ),
+      label: Text(text, style: const TextStyle(color: AppTheme.textPrimary)),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

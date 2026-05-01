@@ -7,13 +7,14 @@ import '../admin/admin_dashboard.dart';
 import '../../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -37,7 +38,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     // Wait for the splash screen presentation time
     await Future.delayed(const Duration(seconds: 3));
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     final user = FirebaseAuth.instance.currentUser;
 
@@ -45,7 +48,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // User is logged in, ascertain their role
       String? role;
       try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (doc.exists) {
           role = doc.data()?['role'];
         }
@@ -53,7 +59,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         debugPrint("Error fetching role on startup: \$e");
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       if (role == 'admin') {
         Navigator.pushReplacement(
@@ -91,7 +99,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.home_work_rounded, size: 80, color: Colors.white),
+              const Icon(
+                Icons.home_work_rounded,
+                size: 80,
+                color: Colors.white,
+              ),
               const SizedBox(height: 16),
               Text(
                 'RealEstate',

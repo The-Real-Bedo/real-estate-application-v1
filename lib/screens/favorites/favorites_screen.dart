@@ -8,7 +8,7 @@ import '../../shared/property_card.dart';
 import '../property/property_details_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,10 @@ class FavoritesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites', style: TextStyle(color: AppTheme.textPrimary)),
+        title: const Text(
+          'Favorites',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -39,7 +42,9 @@ class FavoritesScreen extends StatelessWidget {
           List<dynamic> favorites = userData['favorites'] ?? [];
 
           if (favorites.isEmpty) {
-            return const Center(child: Text("You have no favorite properties."));
+            return const Center(
+              child: Text("You have no favorite properties."),
+            );
           }
 
           return StreamBuilder<QuerySnapshot>(
@@ -49,7 +54,9 @@ class FavoritesScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (!propsSnap.hasData || propsSnap.data!.docs.isEmpty) {
-                return const Center(child: Text("Favorite properties no longer available."));
+                return const Center(
+                  child: Text("Favorite properties no longer available."),
+                );
               }
 
               return ListView.builder(
@@ -58,10 +65,11 @@ class FavoritesScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   var doc = propsSnap.data!.docs[index];
                   var data = doc.data() as Map<String, dynamic>;
-                  String imageUrl = (data['images'] != null && data['images'].isNotEmpty) 
-                                     ? data['images'][0] 
-                                     : '';
-                                     
+                  String imageUrl =
+                      (data['images'] != null && data['images'].isNotEmpty)
+                      ? data['images'][0]
+                      : '';
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: SizedBox(
@@ -74,7 +82,10 @@ class FavoritesScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => PropertyDetailsScreen(property: doc)),
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PropertyDetailsScreen(property: doc),
+                            ),
                           );
                         },
                       ),

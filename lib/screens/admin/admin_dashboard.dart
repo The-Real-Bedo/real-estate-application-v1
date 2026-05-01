@@ -9,12 +9,15 @@ import '../property/property_details_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({Key? key}) : super(key: key);
+  const AdminDashboard({super.key});
 
   void _logout(BuildContext context) async {
     await Provider.of<AuthService>(context, listen: false).logout();
     if (context.mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
     }
   }
 
@@ -26,11 +29,17 @@ class AdminDashboard extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Admin Dashboard', style: TextStyle(color: AppTheme.textPrimary)),
+          title: const Text(
+            'Admin Dashboard',
+            style: TextStyle(color: AppTheme.textPrimary),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
           actions: [
-            IconButton(icon: const Icon(Icons.logout, color: AppTheme.error), onPressed: () => _logout(context)),
+            IconButton(
+              icon: const Icon(Icons.logout, color: AppTheme.error),
+              onPressed: () => _logout(context),
+            ),
           ],
           bottom: const TabBar(
             labelColor: AppTheme.primary,
@@ -80,26 +89,34 @@ class _PendingPropertiesTab extends StatelessWidget {
             var propertyId = doc.id;
             var title = property['title'] ?? 'No Title';
             var ownerId = property['ownerId'] ?? 'Unknown';
-            String imageUrl = (property['images'] != null && property['images'].isNotEmpty) 
-                                ? property['images'][0] 
-                                : '';
+            String imageUrl =
+                (property['images'] != null && property['images'].isNotEmpty)
+                ? property['images'][0]
+                : '';
 
             return _AdminPropertyCard(
               title: title,
-              subtitle: 'By Owner: \$ownerId',
+              subtitle: 'By Owner: $ownerId',
               imageUrl: imageUrl,
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => PropertyDetailsScreen(property: doc)));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PropertyDetailsScreen(property: doc),
+                  ),
+                );
               },
               actions: [
                 IconButton(
                   icon: const Icon(Icons.check_circle, color: AppTheme.success),
-                  onPressed: () => dbService.updatePropertyStatus(propertyId, 'approved'),
+                  onPressed: () =>
+                      dbService.updatePropertyStatus(propertyId, 'approved'),
                   tooltip: 'Approve',
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel, color: AppTheme.error),
-                  onPressed: () => dbService.updatePropertyStatus(propertyId, 'rejected'),
+                  onPressed: () =>
+                      dbService.updatePropertyStatus(propertyId, 'rejected'),
                   tooltip: 'Reject',
                 ),
               ],
@@ -115,21 +132,31 @@ class _ApprovedPropertiesTab extends StatelessWidget {
   final DatabaseService dbService;
   const _ApprovedPropertiesTab({required this.dbService});
 
-  void _confirmDelete(BuildContext context, String propertyId, List<dynamic> images) {
+  void _confirmDelete(BuildContext context, String propertyId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Property?'),
-        content: const Text('Are you sure you want to delete this live property? All associated images will be deleted.'),
+        content: const Text(
+          'Are you sure you want to delete this live property? All associated images will be deleted.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleting...')));
-              await dbService.deleteProperty(propertyId, images);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Deleting...')));
+              await dbService.deleteProperty(propertyId);
             },
-            child: const Text('Delete', style: TextStyle(color: AppTheme.error)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
@@ -157,22 +184,27 @@ class _ApprovedPropertiesTab extends StatelessWidget {
             var propertyId = doc.id;
             var title = property['title'] ?? 'No Title';
             var ownerId = property['ownerId'] ?? 'Unknown';
-            String imageUrl = (property['images'] != null && property['images'].isNotEmpty) 
-                                ? property['images'][0] 
-                                : '';
-            List<dynamic> allImages = property['images'] ?? [];
+            String imageUrl =
+                (property['images'] != null && property['images'].isNotEmpty)
+                ? property['images'][0]
+                : '';
 
             return _AdminPropertyCard(
               title: title,
-              subtitle: 'By Owner: \$ownerId',
+              subtitle: 'By Owner: $ownerId',
               imageUrl: imageUrl,
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => PropertyDetailsScreen(property: doc)));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PropertyDetailsScreen(property: doc),
+                  ),
+                );
               },
               actions: [
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppTheme.error),
-                  onPressed: () => _confirmDelete(context, propertyId, allImages),
+                  onPressed: () => _confirmDelete(context, propertyId),
                   tooltip: 'Delete',
                 ),
               ],
@@ -223,8 +255,10 @@ class _AdminPropertyCard extends StatelessWidget {
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => const Icon(Icons.downloading, color: Colors.grey),
-                          errorWidget: (context, url, error) => const Icon(Icons.image, color: Colors.grey),
+                          placeholder: (context, url) =>
+                              const Icon(Icons.downloading, color: Colors.grey),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.image, color: Colors.grey),
                         )
                       : const Icon(Icons.image, color: Colors.grey),
                 ),
@@ -234,8 +268,21 @@ class _AdminPropertyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(subtitle, style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
