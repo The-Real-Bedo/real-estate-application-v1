@@ -10,10 +10,19 @@ class AuthService extends ChangeNotifier {
 
   User? _user;
   String? _userRole;
+  String? _fullName;
   late final StreamSubscription<User?> _authSubscription;
 
   User? get user => _user;
   String? get userRole => _userRole;
+  String? get fullName => _fullName;
+  String get firstName {
+    final name = _fullName?.trim();
+    if (name != null && name.isNotEmpty) {
+      return name.split(RegExp(r'\s+')).first;
+    }
+    return _user?.email?.split('@').first ?? 'User';
+  }
 
   AuthService() {
     _authSubscription = _auth.authStateChanges().listen((User? user) {
@@ -37,14 +46,32 @@ class AuthService extends ChangeNotifier {
     try {
       DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
       if (doc.exists) {
-        _userRole = doc.get('role');
+        final data = doc.data() as Map<String, dynamic>;
+        _userRole = data['role'];
+        _fullName = data['fullName'];
       } else {
         _userRole = null;
+        _fullName = null;
       }
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching role: $e');
     }
+  }
+
+  Future<String?> loadCurrentUserRole() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      _user = null;
+      _userRole = null;
+      _fullName = null;
+      notifyListeners();
+      return null;
+    }
+
+    _user = currentUser;
+    await _fetchUserRole(currentUser.uid);
+    return _userRole;
   }
 
   Future<String?> signUp({
@@ -72,6 +99,7 @@ class AuthService extends ChangeNotifier {
         'role': role,
         'favorites': [],
       });
+      await loadCurrentUserRole();
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return e.message;
@@ -83,6 +111,7 @@ class AuthService extends ChangeNotifier {
   Future<String?> login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
+      await loadCurrentUserRole();
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;

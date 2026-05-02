@@ -72,23 +72,25 @@ class FavoritesScreen extends StatelessWidget {
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: PropertyCard(
-                        title: data['title'] ?? 'No Title',
-                        location: data['location'] ?? 'Unknown',
-                        price: '\$${data['price']}',
-                        imageUrl: imageUrl,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PropertyDetailsScreen(property: doc),
-                            ),
-                          );
-                        },
-                      ),
+                    child: PropertyCard(
+                      title: data['title'] ?? 'No Title',
+                      location: data['location'] ?? 'Unknown',
+                      price: '\$${data['price']}',
+                      imageUrl: imageUrl,
+                      category: data['category'] ?? 'apartment',
+                      listingType: data['type'] ?? 'rent',
+                      beds: _asInt(data['beds']),
+                      baths: _asInt(data['baths']),
+                      area: _asDouble(data['area']),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailsScreen(property: doc),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },
@@ -99,4 +101,18 @@ class FavoritesScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '') ?? 0;
 }

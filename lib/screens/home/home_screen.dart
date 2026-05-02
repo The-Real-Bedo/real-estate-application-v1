@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context, listen: false);
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text('Welcome,', style: Theme.of(context).textTheme.bodyMedium),
             Text(
-              authService.user?.email ?? 'User',
+              authService.firstName,
               style: Theme.of(
                 context,
               ).textTheme.displayMedium?.copyWith(fontSize: 16),
@@ -145,10 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     String location = (property['location'] ?? '')
                         .toString()
                         .toLowerCase();
-                    String categoryField =
-                        (property['category'] ?? property['type'] ?? '')
-                            .toString()
-                            .toLowerCase();
+                    String categoryField = (property['category'] ?? '')
+                        .toString()
+                        .toLowerCase();
 
                     // Search Query Matching
                     bool matchesSearch =
@@ -180,26 +179,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  return SizedBox(
-                    height: 220,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: filteredDocs.length,
-                      itemBuilder: (context, index) {
-                        var propertyDoc = filteredDocs[index];
-                        var property =
-                            propertyDoc.data() as Map<String, dynamic>;
-                        String imageUrl =
-                            (property['images'] != null &&
-                                property['images'].isNotEmpty)
-                            ? property['images'][0]
-                            : '';
+                  return Column(
+                    children: filteredDocs.map((propertyDoc) {
+                      var property = propertyDoc.data() as Map<String, dynamic>;
+                      String imageUrl =
+                          (property['images'] != null &&
+                              property['images'].isNotEmpty)
+                          ? property['images'][0]
+                          : '';
 
-                        return PropertyCard(
-                          title: property['title'],
-                          location: property['location'],
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: PropertyCard(
+                          title: property['title'] ?? 'No Title',
+                          location: property['location'] ?? 'Unknown location',
                           price: '\$${property['price']}',
                           imageUrl: imageUrl,
+                          category: property['category'] ?? 'apartment',
+                          listingType: property['type'] ?? 'rent',
+                          beds: _asInt(property['beds']),
+                          baths: _asInt(property['baths']),
+                          area: _asDouble(property['area']),
                           onTap: () {
                             Navigator.push(
                               context,
@@ -210,9 +210,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }).toList(),
                   );
                 },
               ),
@@ -235,6 +235,20 @@ class _HomeScreenState extends State<HomeScreen> {
           : null,
     );
   }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 class _CategoryPill extends StatelessWidget {

@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/db_service.dart';
 import '../../shared/custom_buttons.dart';
 import '../../theme/app_theme.dart';
+import 'map_picker_screen.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   const AddPropertyScreen({super.key});
@@ -24,7 +26,10 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   final TextEditingController _bathsCtrl = TextEditingController();
   final TextEditingController _areaCtrl = TextEditingController();
 
+  String _category = 'apartment';
   String _type = 'rent';
+  double? _latitude;
+  double? _longitude;
   bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -58,6 +63,23 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
+    });
+  }
+
+  Future<void> _openMapPicker() async {
+    final pickedLocation = await Navigator.push<PickedLocation>(
+      context,
+      MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+    );
+
+    if (pickedLocation == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _locationCtrl.text = pickedLocation.address;
+      _latitude = pickedLocation.latitude;
+      _longitude = pickedLocation.longitude;
     });
   }
 
@@ -113,8 +135,11 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       ownerId: authService.user!.uid,
       title: _titleCtrl.text.trim(),
       description: _descCtrl.text.trim(),
+      category: _category,
       type: _type,
       location: _locationCtrl.text.trim(),
+      latitude: _latitude,
+      longitude: _longitude,
       price: double.parse(_priceCtrl.text.trim()),
       beds: int.parse(_bedsCtrl.text.trim()),
       baths: int.parse(_bathsCtrl.text.trim()),
@@ -180,6 +205,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _titleCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: 'Property Title',
                     hintText: 'Modern apartment in New Cairo',
@@ -187,8 +213,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value == null || value.trim().length < 4) {
-                      return 'Please enter a clear property title.';
+                    final title = value?.trim() ?? '';
+                    if (title.length < 6) {
+                      return 'Title must be at least 6 characters.';
+                    }
+                    if (!RegExp(r'[A-Za-z]').hasMatch(title)) {
+                      return 'Title must include letters.';
                     }
                     return null;
                   },
@@ -196,6 +226,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                     hintText: 'Write a short description for the buyer/renter',
@@ -205,8 +236,9 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                   maxLines: 5,
                   textInputAction: TextInputAction.newline,
                   validator: (value) {
-                    if (value == null || value.trim().length < 10) {
-                      return 'Please write at least 10 characters.';
+                    final description = value?.trim() ?? '';
+                    if (description.length < 20) {
+                      return 'Description must be at least 20 characters.';
                     }
                     return null;
                   },
@@ -214,17 +246,44 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _locationCtrl,
+                  readOnly: true,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  onTap: _openMapPicker,
                   decoration: const InputDecoration(
                     labelText: 'Location / Address',
-                    hintText: 'City, area, or street',
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                    hintText: 'Tap to choose from map',
+                    prefixIcon: Icon(Icons.map_outlined),
+                    suffixIcon: Icon(Icons.open_in_new_rounded),
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (value) {
-                    if (value == null || value.trim().length < 3) {
-                      return 'Please enter the property location.';
+                    final location = value?.trim() ?? '';
+                    if (location.length < 4) {
+                      return 'Please enter a clearer location.';
                     }
                     return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: _category,
+                  decoration: const InputDecoration(
+                    labelText: 'Property Type',
+                    prefixIcon: Icon(Icons.apartment_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'apartment',
+                      child: Text('Apartment'),
+                    ),
+                    DropdownMenuItem(value: 'villa', child: Text('Villa')),
+                    DropdownMenuItem(value: 'chalet', child: Text('Chalet')),
+                    DropdownMenuItem(value: 'office', child: Text('Office')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _category = val);
+                    }
                   },
                 ),
                 const SizedBox(height: 16),
@@ -252,6 +311,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _priceCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: 'Price',
                     hintText: 'Example: 15000',
@@ -260,7 +320,11 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  validator: (value) => _validatePositiveNumber(value, 'price'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  validator: (value) =>
+                      _validatePrice(value, listingType: _type),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -268,20 +332,33 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _bedsCtrl,
-                        decoration: const InputDecoration(labelText: 'Beds'),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        decoration: const InputDecoration(
+                          labelText: 'Beds / Rooms',
+                          helperText: '0 is allowed for offices.',
+                        ),
                         keyboardType: TextInputType.number,
-                        validator: (value) =>
-                            _validatePositiveInt(value, 'beds'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        validator: (value) => _validateRooms(
+                          value,
+                          allowZero: _category == 'office',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
                         controller: _bathsCtrl,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         decoration: const InputDecoration(labelText: 'Baths'),
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         validator: (value) =>
-                            _validatePositiveInt(value, 'baths'),
+                            _validateIntRange(value, 'baths', min: 1, max: 20),
                       ),
                     ),
                   ],
@@ -289,6 +366,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _areaCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: 'Area',
                     hintText: 'Area in square meters',
@@ -297,7 +375,11 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  validator: (value) => _validatePositiveNumber(value, 'area'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  validator: (value) =>
+                      _validateNumberRange(value, 'area', min: 20, max: 20000),
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(
@@ -427,18 +509,58 @@ class _ImagePickerBox extends StatelessWidget {
   }
 }
 
-String? _validatePositiveNumber(String? value, String fieldName) {
+String? _validatePrice(String? value, {required String listingType}) {
   final number = double.tryParse(value?.trim() ?? '');
   if (number == null || number <= 0) {
-    return 'Enter a valid $fieldName greater than 0.';
+    return 'Enter a valid price greater than 0.';
+  }
+  if (number < 500) {
+    return listingType == 'rent'
+        ? 'Rent price looks too low.'
+        : 'Sale price looks too low.';
+  }
+  if (number > 1000000000) {
+    return 'Price is too high. Please check it.';
   }
   return null;
 }
 
-String? _validatePositiveInt(String? value, String fieldName) {
+String? _validateRooms(String? value, {required bool allowZero}) {
   final number = int.tryParse(value?.trim() ?? '');
-  if (number == null || number <= 0) {
-    return 'Enter valid $fieldName.';
+  if (number == null) {
+    return 'Enter number of beds/rooms.';
+  }
+  if (number == 0 && !allowZero) {
+    return 'Enter at least 1 room.';
+  }
+  if (number < 0 || number > 30) {
+    return 'Rooms must be between ${allowZero ? 0 : 1} and 30.';
+  }
+  return null;
+}
+
+String? _validateIntRange(
+  String? value,
+  String fieldName, {
+  required int min,
+  required int max,
+}) {
+  final number = int.tryParse(value?.trim() ?? '');
+  if (number == null || number < min || number > max) {
+    return 'Enter $fieldName between $min and $max.';
+  }
+  return null;
+}
+
+String? _validateNumberRange(
+  String? value,
+  String fieldName, {
+  required double min,
+  required double max,
+}) {
+  final number = double.tryParse(value?.trim() ?? '');
+  if (number == null || number < min || number > max) {
+    return 'Enter $fieldName between ${min.toInt()} and ${max.toInt()}.';
   }
   return null;
 }

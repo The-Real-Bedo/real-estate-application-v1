@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../theme/app_theme.dart';
+import '../services/auth_service.dart';
+import 'admin/admin_dashboard.dart';
 import 'home/home_screen.dart';
 import 'favorites/favorites_screen.dart';
 import 'profile/profile_screen.dart';
@@ -14,18 +17,37 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const FavoritesScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final isAdmin = context.watch<AuthService>().userRole == 'admin';
+    final screens = [
+      const HomeScreen(),
+      const FavoritesScreen(),
+      if (isAdmin) const AdminDashboard(showLogout: false),
+      const ProfileScreen(),
+    ];
+    final items = [
+      const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.favorite_border),
+        label: 'Favorites',
+      ),
+      if (isAdmin)
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.admin_panel_settings_outlined),
+          label: 'Admin',
+        ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person_outline),
+        label: 'Profile',
+      ),
+    ];
+    final selectedIndex = _currentIndex >= screens.length ? 0 : _currentIndex;
+
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: screens[selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: selectedIndex,
         selectedItemColor: AppTheme.primary,
         unselectedItemColor: AppTheme.textSecondary,
         showUnselectedLabels: true,
@@ -35,17 +57,7 @@ class _MainLayoutState extends State<MainLayout> {
             _currentIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
+        items: items,
       ),
     );
   }

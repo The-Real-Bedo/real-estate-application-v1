@@ -99,23 +99,25 @@ class MyPropertiesScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Stack(
                   children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: PropertyCard(
-                        title: property['title'] ?? 'No Title',
-                        location: property['location'] ?? 'Unknown',
-                        price: '\$${property['price']}',
-                        imageUrl: imageUrl,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PropertyDetailsScreen(property: propertyDoc),
-                            ),
-                          );
-                        },
-                      ),
+                    PropertyCard(
+                      title: property['title'] ?? 'No Title',
+                      location: property['location'] ?? 'Unknown',
+                      price: '\$${property['price']}',
+                      imageUrl: imageUrl,
+                      category: property['category'] ?? 'apartment',
+                      listingType: property['type'] ?? 'rent',
+                      beds: _asInt(property['beds']),
+                      baths: _asInt(property['baths']),
+                      area: _asDouble(property['area']),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailsScreen(property: propertyDoc),
+                          ),
+                        );
+                      },
                     ),
                     Positioned(
                       top: 8,
@@ -168,4 +170,18 @@ class MyPropertiesScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '') ?? 0;
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:real_estate_app/screens/auth/welcome_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../main_layout.dart';
-import '../admin/admin_dashboard.dart';
 import '../../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -45,35 +43,10 @@ class _SplashScreenState extends State<SplashScreen>
     final user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      // User is logged in, ascertain their role
-      String? role;
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        if (doc.exists) {
-          role = doc.data()?['role'];
-        }
-      } catch (e) {
-        debugPrint("Error fetching role on startup: \$e");
-      }
-
-      if (!mounted) {
-        return;
-      }
-
-      if (role == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainLayout()),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+      );
     } else {
       // Not logged in
       Navigator.pushReplacement(

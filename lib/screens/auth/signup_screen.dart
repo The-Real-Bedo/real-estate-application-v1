@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../shared/custom_buttons.dart';
 import '../../theme/app_theme.dart';
-import '../admin/admin_dashboard.dart';
 import '../main_layout.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -76,13 +76,9 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       }
 
-      final role = authService.userRole;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-              role == 'admin' ? const AdminDashboard() : const MainLayout(),
-        ),
+        MaterialPageRoute(builder: (_) => const MainLayout()),
         (route) => false,
       );
     } else {
@@ -211,7 +207,7 @@ class _StepHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           currentStep == 1
-              ? 'Use a valid email and a password of at least 6 characters.'
+              ? 'Use a valid email and a strong password.'
               : 'Tell us who owns this account.',
           style: const TextStyle(color: AppTheme.textSecondary, height: 1.4),
         ),
@@ -275,6 +271,7 @@ class _AccountStep extends StatelessWidget {
         children: [
           TextFormField(
             controller: emailCtrl,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: const InputDecoration(
               labelText: 'Email',
               hintText: 'name@example.com',
@@ -287,9 +284,12 @@ class _AccountStep extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: passCtrl,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             obscureText: hidePassword,
             decoration: InputDecoration(
               labelText: 'Password',
+              helperText:
+                  'At least 8 chars, with uppercase, lowercase and number.',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -301,11 +301,12 @@ class _AccountStep extends StatelessWidget {
               ),
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
+              final password = value?.trim() ?? '';
+              if (password.isEmpty) {
                 return 'Please enter a password.';
               }
-              if (value.trim().length < 6) {
-                return 'Password must be at least 6 characters.';
+              if (!_isStrongPassword(password)) {
+                return 'Password must include upper, lower and number.';
               }
               return null;
             },
@@ -313,6 +314,7 @@ class _AccountStep extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: confirmPassCtrl,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             obscureText: hideConfirmPassword,
             decoration: InputDecoration(
               labelText: 'Confirm Password',
@@ -327,6 +329,9 @@ class _AccountStep extends StatelessWidget {
               ),
             ),
             validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please confirm your password.';
+              }
               if (value != passCtrl.text) {
                 return "Passwords don't match.";
               }
@@ -359,6 +364,7 @@ class _ProfileStep extends StatelessWidget {
         children: [
           TextFormField(
             controller: nameCtrl,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: const InputDecoration(
               labelText: 'Full Name',
               prefixIcon: Icon(Icons.person_outline),
@@ -374,16 +380,22 @@ class _ProfileStep extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: phoneCtrl,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: const InputDecoration(
               labelText: 'Phone Number',
-              hintText: 'Optional',
+              hintText: '01XXXXXXXXX',
+              helperText: 'start with 010, 011, 012 or 015.',
               prefixIcon: Icon(Icons.phone_outlined),
             ),
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
             validator: (value) {
               final phone = value?.trim() ?? '';
-              if (phone.isNotEmpty && phone.length < 7) {
-                return 'Please enter a valid phone number.';
+              if (!_isValidEgyptianPhone(phone)) {
+                return 'Enter a valid mobile number.';
               }
               return null;
             },
@@ -399,8 +411,20 @@ String? _validateEmail(String? value) {
   if (email.isEmpty) {
     return 'Please enter your email.';
   }
-  if (!email.contains('@') || !email.contains('.')) {
+  final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+  if (!emailRegex.hasMatch(email)) {
     return 'Please enter a valid email.';
   }
   return null;
+}
+
+bool _isStrongPassword(String password) {
+  final hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
+  final hasLowercase = RegExp(r'[a-z]').hasMatch(password);
+  final hasNumber = RegExp(r'\d').hasMatch(password);
+  return password.length >= 8 && hasUppercase && hasLowercase && hasNumber;
+}
+
+bool _isValidEgyptianPhone(String phone) {
+  return RegExp(r'^01[0125]\d{8}$').hasMatch(phone);
 }

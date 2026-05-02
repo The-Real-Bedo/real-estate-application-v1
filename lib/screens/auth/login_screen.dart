@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../shared/custom_buttons.dart';
 import '../../theme/app_theme.dart';
-import '../admin/admin_dashboard.dart';
 import '../main_layout.dart';
 import 'role_selection_screen.dart';
 
@@ -51,13 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final role = authService.userRole;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-              role == 'admin' ? const AdminDashboard() : const MainLayout(),
-        ),
+        MaterialPageRoute(builder: (_) => const MainLayout()),
       );
     } else {
       ScaffoldMessenger.of(
@@ -94,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 36),
                 TextFormField(
                   controller: _emailCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     hintText: 'name@example.com',
@@ -106,9 +102,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passCtrl,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   obscureText: _hidePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    helperText:
+                        'Use the password you created for this account.',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -125,6 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your password.';
+                    }
+                    if (value.trim().length < 6) {
+                      return 'Password must be at least 6 characters.';
                     }
                     return null;
                   },
@@ -175,7 +177,8 @@ String? _validateEmail(String? value) {
   if (email.isEmpty) {
     return 'Please enter your email.';
   }
-  if (!email.contains('@') || !email.contains('.')) {
+  final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+  if (!emailRegex.hasMatch(email)) {
     return 'Please enter a valid email.';
   }
   return null;
