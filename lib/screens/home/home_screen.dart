@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/property_model.dart';
 import '../../theme/app_theme.dart';
 import '../../shared/property_card.dart';
 import '../../services/db_service.dart';
@@ -126,28 +126,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              StreamBuilder<QuerySnapshot>(
+              StreamBuilder<List<PropertyModel>>(
                 stream: dbService.getApprovedProperties(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return const Center(child: Text("No properties found."));
                   }
 
                   // Client-side filtering logic
-                  var filteredDocs = snapshot.data!.docs.where((doc) {
-                    var property = doc.data() as Map<String, dynamic>;
-                    String title = (property['title'] ?? '')
-                        .toString()
-                        .toLowerCase();
-                    String location = (property['location'] ?? '')
-                        .toString()
-                        .toLowerCase();
-                    String categoryField = (property['category'] ?? '')
-                        .toString()
-                        .toLowerCase();
+                  var filteredProperties = snapshot.data!.where((property) {
+                    String title = property.title.toLowerCase();
+                    String location = property.location.toLowerCase();
+                    String categoryField = property.category.toLowerCase();
 
                     // Search Query Matching
                     bool matchesSearch =
@@ -158,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Category Matching
                     bool matchesCategory = true;
                     if (_selectedCategory != 'All') {
-                      // We check if the explicit category matches (if saved), OR if title mentions it to support legacy posts where 'category' was not specifically saved
                       String target = _selectedCategory.toLowerCase();
-                      // remove trailing 's' if any to match "apartment" -> "apartments"
                       if (target.endsWith('s')) {
                         target = target.substring(0, target.length - 1);
                       }
@@ -173,39 +164,36 @@ class _HomeScreenState extends State<HomeScreen> {
                     return matchesSearch && matchesCategory;
                   }).toList();
 
-                  if (filteredDocs.isEmpty) {
+                  if (filteredProperties.isEmpty) {
                     return const Center(
                       child: Text("No properties match your search."),
                     );
                   }
 
                   return Column(
-                    children: filteredDocs.map((propertyDoc) {
-                      var property = propertyDoc.data() as Map<String, dynamic>;
-                      String imageUrl =
-                          (property['images'] != null &&
-                              property['images'].isNotEmpty)
-                          ? property['images'][0]
+                    children: filteredProperties.map((property) {
+                      String imageUrl = property.images.isNotEmpty
+                          ? property.images.first
                           : '';
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: PropertyCard(
-                          title: property['title'] ?? 'No Title',
-                          location: property['location'] ?? 'Unknown location',
-                          price: '\$${property['price']}',
+                          title: property.title,
+                          location: property.location,
+                          price: '\$${property.price}',
                           imageUrl: imageUrl,
-                          category: property['category'] ?? 'apartment',
-                          listingType: property['type'] ?? 'rent',
-                          beds: _asInt(property['beds']),
-                          baths: _asInt(property['baths']),
-                          area: _asDouble(property['area']),
+                          category: property.category,
+                          listingType: property.type,
+                          beds: property.beds,
+                          baths: property.baths,
+                          area: property.area,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => PropertyDetailsScreen(
-                                  property: propertyDoc,
+                                  property: property,
                                 ),
                               ),
                             );
