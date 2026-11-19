@@ -225,20 +225,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-int _asInt(dynamic value) {
-  if (value is int) {
-    return value;
-  }
-  return int.tryParse(value?.toString() ?? '') ?? 0;
-}
-
-double _asDouble(dynamic value) {
-  if (value is num) {
-    return value.toDouble();
-  }
-  return double.tryParse(value?.toString() ?? '') ?? 0;
-}
-
 class _CategoryPill extends StatelessWidget {
   final String title;
   final bool isSelected;

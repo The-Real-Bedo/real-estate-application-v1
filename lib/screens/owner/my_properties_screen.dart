@@ -170,16 +170,3 @@ class MyPropertiesScreen extends StatelessWidget {
   }
 }
 
-int _asInt(dynamic value) {
-  if (value is int) {
-    return value;
-  }
-  return int.tryParse(value?.toString() ?? '') ?? 0;
-}
-
-double _asDouble(dynamic value) {
-  if (value is num) {
-    return value.toDouble();
-  }
-  return double.tryParse(value?.toString() ?? '') ?? 0;
-}
