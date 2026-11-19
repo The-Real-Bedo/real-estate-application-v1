@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/property_model.dart';
+import '../../models/user_profile_model.dart';
 import '../../theme/app_theme.dart';
 import '../../services/db_service.dart';
 import '../../services/auth_service.dart';
@@ -73,29 +74,26 @@ class _PendingPropertiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<List<PropertyModel>>(
       stream: dbService.getPendingProperties(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text("No pending properties."));
         }
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
+          itemCount: snapshot.data!.length,
           itemBuilder: (context, index) {
-            var doc = snapshot.data!.docs[index];
-            var property = doc.data() as Map<String, dynamic>;
-            var propertyId = doc.id;
-            var title = property['title'] ?? 'No Title';
-            var ownerId = (property['ownerId'] ?? '').toString();
-            String imageUrl =
-                (property['images'] != null && property['images'].isNotEmpty)
-                ? property['images'][0]
-                : '';
+            final property = snapshot.data![index];
+            final propertyId = property.id;
+            final title = property.title.isNotEmpty ? property.title : 'No Title';
+            final ownerId = property.ownerId;
+            final String imageUrl =
+                property.images.isNotEmpty ? property.images.first : '';
 
             return _OwnerNameBuilder(
               dbService: dbService,
@@ -104,15 +102,15 @@ class _PendingPropertiesTab extends StatelessWidget {
                 return _AdminPropertyCard(
                   title: title,
                   subtitle: 'By Owner: $ownerName',
-                  price: '\$${property['price']}',
-                  category: property['category'] ?? 'apartment',
-                  listingType: property['type'] ?? 'rent',
+                  price: '\$${property.price}',
+                  category: property.category,
+                  listingType: property.type,
                   imageUrl: imageUrl,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => PropertyDetailsScreen(property: doc),
+                        builder: (_) => PropertyDetailsScreen(property: property),
                       ),
                     );
                   },
@@ -184,29 +182,26 @@ class _ApprovedPropertiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<List<PropertyModel>>(
       stream: dbService.getApprovedProperties(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text("No live properties."));
         }
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
+          itemCount: snapshot.data!.length,
           itemBuilder: (context, index) {
-            var doc = snapshot.data!.docs[index];
-            var property = doc.data() as Map<String, dynamic>;
-            var propertyId = doc.id;
-            var title = property['title'] ?? 'No Title';
-            var ownerId = (property['ownerId'] ?? '').toString();
-            String imageUrl =
-                (property['images'] != null && property['images'].isNotEmpty)
-                ? property['images'][0]
-                : '';
+            final property = snapshot.data![index];
+            final propertyId = property.id;
+            final title = property.title.isNotEmpty ? property.title : 'No Title';
+            final ownerId = property.ownerId;
+            final String imageUrl =
+                property.images.isNotEmpty ? property.images.first : '';
 
             return _OwnerNameBuilder(
               dbService: dbService,
@@ -215,15 +210,15 @@ class _ApprovedPropertiesTab extends StatelessWidget {
                 return _AdminPropertyCard(
                   title: title,
                   subtitle: 'By Owner: $ownerName',
-                  price: '\$${property['price']}',
-                  category: property['category'] ?? 'apartment',
-                  listingType: property['type'] ?? 'rent',
+                  price: '\$${property.price}',
+                  category: property.category,
+                  listingType: property.type,
                   imageUrl: imageUrl,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => PropertyDetailsScreen(property: doc),
+                        builder: (_) => PropertyDetailsScreen(property: property),
                       ),
                     );
                   },
@@ -370,14 +365,15 @@ class _OwnerNameBuilder extends StatelessWidget {
       return builder('Unknown owner');
     }
 
-    return FutureBuilder<DocumentSnapshot>(
+    return FutureBuilder<UserProfileModel?>(
       future: dbService.getUserProfile(ownerId),
       builder: (context, snapshot) {
         var ownerName = 'Loading owner...';
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final userData = snapshot.data!.data() as Map<String, dynamic>;
-          ownerName = (userData['fullName'] ?? userData['email'] ?? ownerId)
-              .toString();
+        if (snapshot.hasData && snapshot.data != null) {
+          final profile = snapshot.data!;
+          ownerName = profile.fullName.isNotEmpty
+              ? profile.fullName
+              : (profile.email.isNotEmpty ? profile.email : ownerId);
         } else if (snapshot.hasError ||
             snapshot.connectionState == ConnectionState.done) {
           ownerName = ownerId;
