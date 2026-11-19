@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../models/property_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/db_service.dart';
 import '../../shared/custom_buttons.dart';
 import '../../theme/app_theme.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
-  final DocumentSnapshot property;
+  final PropertyModel property;
   const PropertyDetailsScreen({super.key, required this.property});
 
   @override
@@ -34,13 +34,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       return;
     }
 
-    final userDoc = await dbService.getUserProfile(authService.user!.uid);
-    if (!mounted || !userDoc.exists) {
+    final userProfile = await dbService.getUserProfile(authService.user!.uid);
+    if (!mounted || userProfile == null) {
       return;
     }
 
-    final data = userDoc.data() as Map<String, dynamic>;
-    final favorites = data['favorites'] ?? [];
+    final favorites = userProfile.favorites;
     setState(() {
       _isFavorite = favorites.contains(widget.property.id);
     });
@@ -73,7 +72,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.property.data() as Map<String, dynamic>;
+    final data = widget.property.data();
     final images = (data['images'] ?? []) as List<dynamic>;
     final category = _formatLabel(data['category'] ?? 'apartment');
     final listingType = _formatLabel(data['type'] ?? 'rent');
