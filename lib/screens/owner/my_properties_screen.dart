@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/property_model.dart';
 import '../../theme/app_theme.dart';
 import '../../services/db_service.dart';
 import '../../services/auth_service.dart';
@@ -71,13 +71,13 @@ class MyPropertiesScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppTheme.textPrimary),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<List<PropertyModel>>(
         stream: dbService.getPropertiesByOwner(authService.user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
               child: Text("You haven't added any properties yet."),
             );
@@ -85,36 +85,34 @@ class MyPropertiesScreen extends StatelessWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: snapshot.data!.docs.length,
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
-              var propertyDoc = snapshot.data!.docs[index];
-              var property = propertyDoc.data() as Map<String, dynamic>;
-              String imageUrl =
-                  (property['images'] != null && property['images'].isNotEmpty)
-                  ? property['images'][0]
+              final property = snapshot.data![index];
+              String imageUrl = property.images.isNotEmpty
+                  ? property.images.first
                   : '';
-              String status = property['status'] ?? 'pending';
+              String status = property.status;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Stack(
                   children: [
                     PropertyCard(
-                      title: property['title'] ?? 'No Title',
-                      location: property['location'] ?? 'Unknown',
-                      price: '\$${property['price']}',
+                      title: property.title,
+                      location: property.location,
+                      price: '\$${property.price}',
                       imageUrl: imageUrl,
-                      category: property['category'] ?? 'apartment',
-                      listingType: property['type'] ?? 'rent',
-                      beds: _asInt(property['beds']),
-                      baths: _asInt(property['baths']),
-                      area: _asDouble(property['area']),
+                      category: property.category,
+                      listingType: property.type,
+                      beds: property.beds,
+                      baths: property.baths,
+                      area: property.area,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                PropertyDetailsScreen(property: propertyDoc),
+                                PropertyDetailsScreen(property: property),
                           ),
                         );
                       },
@@ -135,7 +133,7 @@ class MyPropertiesScreen extends StatelessWidget {
                           ),
                         ),
                         onPressed: () =>
-                            _confirmDelete(context, propertyDoc.id),
+                            _confirmDelete(context, property.id),
                       ),
                     ),
                     Positioned(
