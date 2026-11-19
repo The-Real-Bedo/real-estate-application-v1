@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/user_profile_model.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/db_service.dart';
@@ -39,17 +39,17 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: FutureBuilder<DocumentSnapshot>(
+      body: FutureBuilder<UserProfileModel?>(
         future: dbService.getUserProfile(authService.user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('Error loading profile'));
           }
 
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
+          final userData = snapshot.data!;
 
           return Padding(
             padding: const EdgeInsets.all(24.0),
@@ -63,14 +63,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  userData['fullName'] ?? 'No Name',
+                  userData.fullName.isNotEmpty ? userData.fullName : 'No Name',
                   style: Theme.of(
                     context,
                   ).textTheme.displayLarge?.copyWith(fontSize: 24),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  userData['email'] ?? '',
+                  userData.email,
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 16,
@@ -87,7 +87,7 @@ class ProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    (userData['role'] ?? 'User').toUpperCase(),
+                    userData.role.toUpperCase(),
                     style: const TextStyle(
                       color: AppTheme.primary,
                       fontWeight: FontWeight.bold,

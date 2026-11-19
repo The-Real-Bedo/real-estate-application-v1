@@ -1,12 +1,16 @@
 import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // In-memory user data store replacing Cloud Firestore 'users' collection
+  static final Map<String, Map<String, dynamic>> _userStore = {};
+
+  static Map<String, dynamic>? getUserData(String uid) => _userStore[uid];
+  static void setUserData(String uid, Map<String, dynamic> data) =>
+      _userStore[uid] = data;
 
   User? _user;
   String? _userRole;
@@ -44,14 +48,17 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _fetchUserRole(String uid) async {
     try {
-      DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        _userRole = data['role'];
-        _fullName = data['fullName'];
+      final data = _userStore[uid];
+      if (data != null) {
+        _userRole = data['role']?.toString();
+        _fullName = data['fullName']?.toString();
       } else {
-        _userRole = null;
-        _fullName = null;
+        if (_user?.email == 'abdo.bakr.23.11@gmail.com') {
+          _userRole = 'admin';
+        } else {
+          _userRole = 'buyer';
+        }
+        _fullName = _user?.displayName ?? _user?.email?.split('@').first ?? 'User';
       }
       notifyListeners();
     } catch (e) {
@@ -91,14 +98,14 @@ class AuthService extends ChangeNotifier {
         role = 'admin';
       }
 
-      await _db.collection('users').doc(cred.user!.uid).set({
+      _userStore[cred.user!.uid] = {
         'uid': cred.user!.uid,
         'email': email,
         'fullName': fullName,
         'phone': phone,
         'role': role,
-        'favorites': [],
-      });
+        'favorites': <String>[],
+      };
       await loadCurrentUserRole();
       return null; // Success
     } on FirebaseAuthException catch (e) {

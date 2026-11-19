@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/property_model.dart';
 import '../models/user_profile_model.dart';
+import 'auth_service.dart';
 
 class DatabaseService {
   // In-memory data storage replacing Cloud Firestore
@@ -279,6 +280,10 @@ class DatabaseService {
 
   // Get User Profile
   Future<UserProfileModel?> getUserProfile(String uid) async {
+    final authData = AuthService.getUserData(uid);
+    if (authData != null) {
+      return UserProfileModel.fromMap(authData, uid: uid);
+    }
     if (_userProfiles.containsKey(uid)) {
       return _userProfiles[uid];
     }
@@ -295,6 +300,7 @@ class DatabaseService {
   // Save User Profile
   Future<void> saveUserProfile(UserProfileModel profile) async {
     _userProfiles[profile.uid] = profile;
+    AuthService.setUserData(profile.uid, profile.toMap());
   }
 
   // Get favorite properties stream
